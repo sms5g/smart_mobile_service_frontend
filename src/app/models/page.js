@@ -24,12 +24,35 @@ import ConfirmDialog from "@/components/layout/ConfirmDialog";
 import { fetcher } from "@/lib/fetcher";
 
 export default function Models() {
+  const formatModelName = (modelName, modelNumber) => {
+    const trimmedName = (modelName || "").trim();
+    const trimmedNumber = (modelNumber || "").trim();
+
+    if (!trimmedName) return "";
+    return trimmedNumber ? `${trimmedName} (${trimmedNumber})` : trimmedName;
+  };
+
+  const splitModelName = (value) => {
+    const text = (value || "").trim();
+    const match = text.match(/^(.*)\s+\(([^()]+)\)$/);
+
+    if (!match) {
+      return { modelName: text, modelNumber: "" };
+    }
+
+    return {
+      modelName: match[1].trim(),
+      modelNumber: match[2].trim(),
+    };
+  };
+
   const [items, setItems] = useState([]);
   const [brands, setBrands] = useState([]);
   const [search, setSearch] = useState("");
   const [form, setForm] = useState({
     brand: "",
     name: "",
+    modelNumber: "",
     image: "",
   });
   const [editItem, setEditItem] = useState(null);
@@ -64,14 +87,14 @@ export default function Models() {
 
     try {
       const payload = {
-        name: form.name.trim(),
+        name: formatModelName(form.name, form.modelNumber),
         brand: form.brand,
         ...(form.image ? { image: form.image } : {}),
       };
 
       const res = await fetcher("/models", "POST", payload);
       setItems((prev) => [res.data || res, ...prev]);
-      setForm({ brand: "", name: "", image: "" });
+      setForm({ brand: "", name: "", modelNumber: "", image: "" });
       toast.success("Model added");
     } catch (err) {
       toast.error(err.message);
@@ -82,7 +105,10 @@ export default function Models() {
     if (!editItem?._id) return;
     try {
       const payload = {
-        name: (editItem.name || editItem.model_name || "").trim(),
+        name: formatModelName(
+          editItem.modelName || editItem.name || editItem.model_name || "",
+          editItem.modelNumber,
+        ),
         brand:
           editItem.brand?._id ||
           editItem.brand_id?._id ||
@@ -126,7 +152,7 @@ export default function Models() {
       >
         <h3 className="font-semibold mb-4">Add Model</h3>
 
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-4 gap-4">
           <div className="space-y-2">
             <Select
               value={form.brand}
@@ -150,6 +176,16 @@ export default function Models() {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="Model name"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Input
+              value={form.modelNumber}
+              onChange={(e) =>
+                setForm({ ...form, modelNumber: e.target.value })
+              }
+              placeholder="Model number"
             />
           </div>
 
@@ -216,7 +252,12 @@ export default function Models() {
                     <div className="flex justify-center gap-3">
                       <button
                         className="p-2 text-sm border rounded-full bg-black text-white"
-                        onClick={() => setEditItem(item)}
+                        onClick={() =>
+                          setEditItem({
+                            ...item,
+                            ...splitModelName(item.name || item.model_name || ""),
+                          })
+                        }
                         type="button"
                       >
                         <Edit className="h-4 w-4" />
@@ -251,13 +292,25 @@ export default function Models() {
 
           <div className="space-y-4">
             <Input
-              value={editItem?.name || editItem?.model_name || ""}
+              value={editItem?.modelName || ""}
               onChange={(e) =>
                 setEditItem({
                   ...editItem,
-                  name: e.target.value,
+                  modelName: e.target.value,
                 })
               }
+              placeholder="Model name"
+            />
+
+            <Input
+              value={editItem?.modelNumber || ""}
+              onChange={(e) =>
+                setEditItem({
+                  ...editItem,
+                  modelNumber: e.target.value,
+                })
+              }
+              placeholder="Model number"
             />
 
             <ImageUploader
