@@ -4,7 +4,7 @@ import axios from "axios";
 // const BASE_URL =
 //   "https://api-smart-mobile-service.onrender.com";
 
-const BASE_URL = "http://167.86.109.160:5001/api";
+const BASE_URL = "https://api.smartmobileservice5g.co.in/api";
 
 export const fetcher = async (
   endpoint,
