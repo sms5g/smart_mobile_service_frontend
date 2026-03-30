@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Upload, Camera } from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
@@ -61,9 +62,11 @@ export default function ImageUploader({ value, onChange, label = "Image" }) {
 
       <div className="flex items-center gap-4">
         {preview && (
-          <img
+          <Image
             src={preview}
             alt="Preview"
+            width={64}
+            height={64}
             className="h-16 w-16 rounded-lg object-cover border"
           />
         )}

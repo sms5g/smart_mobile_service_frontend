@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -221,9 +222,11 @@ export default function BannersPage() {
                   <td className="p-2 font-semibold">{item.title || "-"}</td>
                   <td className="p-2">
                     {item.image ? (
-                      <img
+                      <Image
                         src={item.image}
                         alt={item.title || "Banner"}
+                        width={64}
+                        height={40}
                         className="h-10 w-16 object-cover rounded border"
                       />
                     ) : (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -351,9 +352,11 @@ export default function Products() {
                     key={`${image}-${index}`}
                     className="relative h-20 w-20 overflow-hidden rounded-xl border bg-muted shadow-sm"
                   >
-                    <img
+                    <Image
                       src={image}
                       alt={`Reference ${index + 1}`}
+                      fill
+                      sizes="80px"
                       className="h-full w-full object-cover"
                     />
                     <button

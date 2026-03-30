@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -237,14 +238,16 @@ export default function Models() {
                   <td className="p-2 font-semibold text-center ">
                     {item.name || item.model_name}
                   </td>
-                  <td className="p-2 text-center ">
-                    {item.image || item.model_image ? (
-                      <img
-                        src={item.image || item.model_image}
-                        alt={item.name || item.model_name}
-                        className="h-10 w-10 rounded object-cover"
-                      />
-                    ) : (
+                    <td className="p-2 text-center ">
+                      {item.image || item.model_image ? (
+                        <Image
+                          src={item.image || item.model_image}
+                          alt={item.name || item.model_name}
+                          width={40}
+                          height={40}
+                          className="h-10 w-10 rounded object-cover"
+                        />
+                      ) : (
                       "—"
                     )}
                   </td>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -167,9 +168,11 @@ export default function Brands() {
 
                   <td className=" p-2">
                     {item.image ? (
-                      <img
+                      <Image
                         src={item.image}
                         alt={item.name || item.brand_name}
+                        width={40}
+                        height={40}
                         className="h-10 w-10 object-contain"
                       />
                     ) : (
