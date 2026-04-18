@@ -4,8 +4,7 @@ import axios from "axios";
 // const BASE_URL =
 //   "https://api-smart-mobile-service.onrender.com";
 
-const BASE_URL = const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://smartmobileservicebackend-production.up.railway.app/api";
-
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://smartmobileservicebackend-production.up.railway.app/api";
 export const fetcher = async (
   endpoint,
   method = "GET",
