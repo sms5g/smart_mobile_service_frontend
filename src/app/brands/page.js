@@ -167,7 +167,7 @@ export default function Brands() {
                   </td>
 
                   <td className=" p-2">
-                    {item.image ? (
+                    {item?.image ? (
                       <Image
                         src={item.image}
                         alt={item.name || item.brand_name}

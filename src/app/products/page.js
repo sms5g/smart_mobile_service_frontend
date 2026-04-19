@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -24,7 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash, Upload, X } from "lucide-react";
+import { Edit, Plus, Trash, Upload, X } from "lucide-react";
 import { toast } from "react-toastify";
 import ConfirmDialog from "@/components/layout/ConfirmDialog";
 import { fetcher } from "@/lib/fetcher";
@@ -47,10 +54,16 @@ export default function Products() {
   const [search, setSearch] = useState("");
   const [brandSearch, setBrandSearch] = useState("");
   const [modelSearch, setModelSearch] = useState("");
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
   const [form, setForm] = useState(INITIAL_FORM);
+  const [editItem, setEditItem] = useState(null);
+  const [editForm, setEditForm] = useState(INITIAL_FORM);
   const [deleteItem, setDeleteItem] = useState(null);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [isUploadingEditImages, setIsUploadingEditImages] = useState(false);
   const [formResetKey, setFormResetKey] = useState(0);
+  const [editFormResetKey, setEditFormResetKey] = useState(0);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -80,12 +93,17 @@ export default function Products() {
     setProducts(res.data || res || []);
   };
 
-  const handleReferenceImageUpload = async (files, input) => {
+  const handleReferenceImageUpload = async (
+    files,
+    input,
+    setTargetForm = setForm,
+    setUploading = setIsUploadingImages,
+  ) => {
     const validFiles = Array.from(files || []);
     if (!validFiles.length) return;
 
     try {
-      setIsUploadingImages(true);
+      setUploading(true);
       const uploadedImages = [];
 
       for (const file of validFiles) {
@@ -110,7 +128,7 @@ export default function Products() {
         uploadedImages.push(imageUrl);
       }
 
-      setForm((prev) => ({
+      setTargetForm((prev) => ({
         ...prev,
         referenceImages: [...prev.referenceImages, ...uploadedImages],
       }));
@@ -118,13 +136,13 @@ export default function Products() {
     } catch (error) {
       toast.error(error.message || "Failed to upload reference images");
     } finally {
-      setIsUploadingImages(false);
+      setUploading(false);
       if (input) input.value = "";
     }
   };
 
-  const removeReferenceImage = (imageUrl) => {
-    setForm((prev) => ({
+  const removeReferenceImage = (imageUrl, setTargetForm = setForm) => {
+    setTargetForm((prev) => ({
       ...prev,
       referenceImages: prev.referenceImages.filter(
         (image) => image !== imageUrl,
@@ -174,6 +192,41 @@ export default function Products() {
     }
   };
 
+  const handleUpdate = async () => {
+    if (!editItem?._id) return;
+
+    if (
+      !editForm.category ||
+      !editForm.brandIds.length ||
+      !editForm.modelIds.length ||
+      !editForm.price ||
+      isRichTextEmpty(editForm.description)
+    ) {
+      toast.error("All required fields must be filled");
+      return;
+    }
+
+    try {
+      const payload = {
+        category: editForm.category,
+        brand: editForm.brandIds,
+        model: editForm.modelIds,
+        price: Number(editForm.price),
+        description: editForm.description,
+        referenceImages: editForm.referenceImages,
+      };
+
+      await fetcher(`/products/${editItem._id}`, "PUT", payload);
+
+      setEditItem(null);
+      setEditForm(INITIAL_FORM);
+      toast.success("Product updated");
+      refreshProducts();
+    } catch (error) {
+      toast.error(error.message || "Failed to update product");
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleteItem?._id) return;
     try {
@@ -196,45 +249,211 @@ export default function Products() {
     [products],
   );
 
-  const getBrandLabel = (item) => {
-    if (Array.isArray(item.brand)) {
-      return item.brand
-        .map((brand) => brand?.name || brand?.brand_name || brand)
-        .filter(Boolean)
-        .join(", ");
-    }
-    return item.brand?.name || item.brand?.brand_name || "-";
-  };
-
-  const getModelLabel = (item) => {
-    if (Array.isArray(item.model)) {
-      return item.model
-        .map((model) => model?.name || model?.model_name || model)
-        .filter(Boolean)
-        .join(", ");
-    }
-    return item.model?.name || item.model?.model_name || "-";
-  };
-
-  const filteredProducts = useMemo(
+  const brandMap = useMemo(
     () =>
-      productItems.filter((p) => {
-        const textMatch = `${p.name || p.title || ""} ${stripHtml(p.description || "")} ${getBrandLabel(p)} ${getModelLabel(p)}`
-          .toLowerCase()
-          .includes(search.toLowerCase());
-
-        const brandMatch = getBrandLabel(p)
-          .toLowerCase()
-          .includes(brandSearch.toLowerCase());
-
-        const modelMatch = getModelLabel(p)
-          .toLowerCase()
-          .includes(modelSearch.toLowerCase());
-
-        return textMatch && brandMatch && modelMatch;
-      }),
-    [productItems, search, brandSearch, modelSearch],
+      new Map(
+        brands.map((brand) => [
+          String(brand._id),
+          brand.name || brand.brand_name || "",
+        ]),
+      ),
+    [brands],
   );
+
+  const modelMap = useMemo(
+    () =>
+      new Map(
+        models.map((model) => [
+          String(model._id),
+          model.name || model.model_name || "",
+        ]),
+      ),
+    [models],
+  );
+
+  const categoryMap = useMemo(
+    () =>
+      new Map(
+        categories.map((category) => [
+          String(category._id),
+          category.name || category.category_name || "",
+        ]),
+      ),
+    [categories],
+  );
+
+  const getOptionLabel = useCallback((value, map, fieldNames = []) => {
+    if (!value) return "";
+
+    if (typeof value === "object") {
+      for (const fieldName of fieldNames) {
+        if (value[fieldName]) return value[fieldName];
+      }
+
+      const id = value._id || value.id;
+      return id ? map.get(String(id)) || "" : "";
+    }
+
+    return map.get(String(value)) || String(value);
+  }, []);
+
+  const normalizeValues = useCallback((value) => {
+    if (Array.isArray(value)) return value;
+    return value ? [value] : [];
+  }, []);
+
+  const getOptionId = useCallback((value) => {
+    if (!value) return "";
+    if (typeof value === "object") return String(value._id || value.id || "");
+    return String(value);
+  }, []);
+
+  const getSelectedIds = useCallback(
+    (value) => normalizeValues(value).map(getOptionId).filter(Boolean),
+    [getOptionId, normalizeValues],
+  );
+
+  const getModelBrandId = useCallback(
+    (model) => getOptionId(model.brand || model.brand_id),
+    [getOptionId],
+  );
+
+  const getModelOptions = useCallback(
+    (selectedBrandIds) =>
+      models
+        .filter((model) => {
+          if (!selectedBrandIds.length) return true;
+          return selectedBrandIds.includes(getModelBrandId(model));
+        })
+        .map((model) => ({
+          ...model,
+          name: model.name || model.model_name,
+        })),
+    [getModelBrandId, models],
+  );
+
+  const getBrandLabel = useCallback(
+    (item) => {
+      const labels = normalizeValues(item.brand || item.brand_id || item.brands)
+        .map((brand) => getOptionLabel(brand, brandMap, ["name", "brand_name"]))
+        .filter(Boolean);
+
+      return labels.length ? labels.join(", ") : "-";
+    },
+    [brandMap, getOptionLabel, normalizeValues],
+  );
+
+  const getModelLabel = useCallback(
+    (item) => {
+      const labels = normalizeValues(item.model || item.model_id || item.models)
+        .map((model) => getOptionLabel(model, modelMap, ["name", "model_name"]))
+        .filter(Boolean);
+
+      return labels.length ? labels.join(", ") : "-";
+    },
+    [getOptionLabel, modelMap, normalizeValues],
+  );
+
+  const getCategoryLabel = useCallback(
+    (item) =>
+      getOptionLabel(item.category || item.category_id, categoryMap, [
+        "name",
+        "category_name",
+      ]) || "-",
+    [categoryMap, getOptionLabel],
+  );
+
+  const openEditDialog = useCallback(
+    (item) => {
+      const brandIds = getSelectedIds(
+        item.brand || item.brand_id || item.brands,
+      );
+      const modelIds = getSelectedIds(
+        item.model || item.model_id || item.models,
+      );
+      const categoryId = getOptionId(item.category || item.category_id);
+
+      setEditItem(item);
+      setEditForm({
+        category: categoryId,
+        brandIds,
+        modelIds,
+        price: String(item.price || item.amount || ""),
+        description: item.description || "",
+        referenceImages: item.referenceImages || item.reference_images || [],
+      });
+      setEditFormResetKey((prev) => prev + 1);
+    },
+    [getOptionId, getSelectedIds],
+  );
+
+  const filteredProducts = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const brandQuery = brandSearch.trim().toLowerCase();
+    const modelQuery = modelSearch.trim().toLowerCase();
+
+    return productItems.filter((p) => {
+      const brandLabel = getBrandLabel(p);
+      const modelLabel = getModelLabel(p);
+      const categoryLabel = getCategoryLabel(p);
+      const priceLabel = String(p.price || p.amount || "");
+
+      const textMatch =
+        `${p.name || p.title || ""} ${stripHtml(p.description || "")} ${brandLabel} ${modelLabel} ${categoryLabel} ${priceLabel}`
+          .toLowerCase()
+          .includes(query);
+
+      const brandMatch = brandLabel.toLowerCase().includes(brandQuery);
+
+      const modelMatch = modelLabel.toLowerCase().includes(modelQuery);
+
+      return textMatch && brandMatch && modelMatch;
+    });
+  }, [
+    productItems,
+    search,
+    brandSearch,
+    modelSearch,
+    getBrandLabel,
+    getModelLabel,
+    getCategoryLabel,
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const pageStartIndex = (currentPage - 1) * pageSize;
+  const pageEndIndex = pageStartIndex + pageSize;
+
+  const paginatedProducts = useMemo(
+    () => filteredProducts.slice(pageStartIndex, pageEndIndex),
+    [filteredProducts, pageEndIndex, pageStartIndex],
+  );
+
+  const paginationPages = useMemo(() => {
+    const maxVisiblePages = 5;
+    const start = Math.max(
+      1,
+      Math.min(
+        currentPage - Math.floor(maxVisiblePages / 2),
+        totalPages - maxVisiblePages + 1,
+      ),
+    );
+    const end = Math.min(totalPages, start + maxVisiblePages - 1);
+
+    return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+  }, [currentPage, totalPages]);
+
+  const firstVisibleProduct = filteredProducts.length ? pageStartIndex + 1 : 0;
+  const lastVisibleProduct = Math.min(pageEndIndex, filteredProducts.length);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, brandSearch, modelSearch, pageSize]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   return (
     <div className="space-y-6">
@@ -250,7 +469,8 @@ export default function Products() {
             Add Product
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Create a product entry with model mapping, rich details, and reference images.
+            Create a product entry with model mapping, rich details, and
+            reference images.
           </p>
         </div>
 
@@ -297,17 +517,7 @@ export default function Products() {
               <Label>Model</Label>
               <MultiSelect
                 key={`model-${formResetKey}`}
-                options={models
-                  .filter((m) => {
-                    if (!form.brandIds.length) return true;
-                    const modelBrand =
-                      m.brand?._id || m.brand_id?._id || m.brand_id || m.brand;
-                    return form.brandIds.includes(String(modelBrand));
-                  })
-                  .map((model) => ({
-                    ...model,
-                    name: model.name || model.model_name,
-                  }))}
+                options={getModelOptions(form.brandIds)}
                 value={form.modelIds}
                 onChange={(value) => setForm({ ...form, modelIds: value })}
                 placeholder="Select Model(s)"
@@ -412,40 +622,62 @@ export default function Products() {
               Filter by brand and model to quickly find the exact catalog entry.
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 lg:min-w-[620px]">
-            <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-                General
-              </Label>
-              <Input
-                placeholder="Search product..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-11 rounded-xl"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-                Brand
-              </Label>
-              <Input
-                placeholder="Search brand..."
-                value={brandSearch}
-                onChange={(e) => setBrandSearch(e.target.value)}
-                className="h-11 rounded-xl"
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2 xl:col-span-1">
-              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-                Model
-              </Label>
-              <Input
-                placeholder="Search model..."
-                value={modelSearch}
-                onChange={(e) => setModelSearch(e.target.value)}
-                className="h-11 rounded-xl"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+              Per Page Products
+            </Label>
+            <Input
+              placeholder="10"
+              type="number"
+              // min="1"
+              value={pageSize}
+              onChange={(e) =>  
+                setPageSize(Math.max(1, Number(e.target.value)))
+              }
+              className=" rounded-md"
+            />
+          </div>
+        </div>
+        <div className="p-5 grid grid-cols-4 gap-2 items-center lg:min-w-[900px]">
+          <div className="space-y-2">
+            <Input
+              placeholder="Search product..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="rounded-md"
+            />
+          </div>
+          <div className="space-y-2">
+            <Input
+              placeholder="Search brand..."
+              value={brandSearch}
+              onChange={(e) => setBrandSearch(e.target.value)}
+              className="rounded-md"
+            />
+          </div>
+          <div className="space-y-2 sm:col-span-2 xl:col-span-1">
+            <Input
+              placeholder="Search model..."
+              value={modelSearch}
+              onChange={(e) => setModelSearch(e.target.value)}
+              className="rounded-md"
+            />
+          </div>
+          
+          <div className="flex items-end">
+            <Button
+              type="button"
+              className="w-full rounded-md"
+              onClick={() => {
+                setSearch("");
+                setBrandSearch("");
+                setModelSearch("");
+                setCurrentPage(1);
+              }}
+              disabled={!search && !brandSearch && !modelSearch}
+            >
+              Reset
+            </Button>
           </div>
         </div>
 
@@ -460,7 +692,9 @@ export default function Products() {
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               Visible Results
             </p>
-            <p className="mt-2 text-2xl font-semibold">{filteredProducts.length}</p>
+            <p className="mt-2 text-2xl font-semibold">
+              {filteredProducts.length}
+            </p>
           </div>
           <div className="rounded-2xl border border-border/50 bg-background/80 p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -473,8 +707,8 @@ export default function Products() {
         </div>
 
         <div className="block lg:hidden space-y-3 p-4 sm:p-6">
-          {filteredProducts?.length ? (
-            filteredProducts.map((item, index) => (
+          {paginatedProducts?.length ? (
+            paginatedProducts.map((item, index) => (
               <div
                 key={item._id}
                 className="rounded-2xl border border-border/60 bg-background p-4 shadow-sm"
@@ -482,20 +716,29 @@ export default function Products() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Product #{index + 1}
+                      Product #{pageStartIndex + index + 1}
                     </p>
                     <p className="mt-1 font-semibold">{getBrandLabel(item)}</p>
                     <p className="text-sm text-muted-foreground">
                       {getModelLabel(item)}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    className="rounded-full bg-red-500 p-2 text-white"
-                    onClick={() => setDeleteItem(item)}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className="rounded-full bg-black p-2 text-white"
+                      onClick={() => openEditDialog(item)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-full bg-red-500 p-2 text-white"
+                      onClick={() => setDeleteItem(item)}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
@@ -503,15 +746,15 @@ export default function Products() {
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">
                       Category
                     </p>
-                    <p className="mt-1 font-medium">
-                      {item.category?.name || item.category?.category_name || "-"}
-                    </p>
+                    <p className="mt-1 font-medium">{getCategoryLabel(item)}</p>
                   </div>
                   <div className="rounded-xl bg-muted/40 p-3">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">
                       Price
                     </p>
-                    <p className="mt-1 font-medium">{item.price || item.amount || "-"}</p>
+                    <p className="mt-1 font-medium">
+                      {item.price || item.amount || "-"}
+                    </p>
                   </div>
                 </div>
 
@@ -546,20 +789,27 @@ export default function Products() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProducts?.length ? (
-                filteredProducts.map((item, index) => (
+              {paginatedProducts?.length ? (
+                paginatedProducts.map((item, index) => (
                   <TableRow key={item._id}>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell className="font-medium">{getBrandLabel(item)}</TableCell>
-                    <TableCell>{getModelLabel(item)}</TableCell>
-                    <TableCell>
-                      {item.category?.name || item.category?.category_name || "-"}
+                    <TableCell>{pageStartIndex + index + 1}</TableCell>
+                    <TableCell className="font-medium">
+                      {getBrandLabel(item)}
                     </TableCell>
+                    <TableCell>{getModelLabel(item)}</TableCell>
+                    <TableCell>{getCategoryLabel(item)}</TableCell>
                     <TableCell>{item.price || item.amount || "-"}</TableCell>
                     <TableCell className="max-w-xs truncate">
                       {stripHtml(item.description) || "-"}
                     </TableCell>
                     <TableCell className="text-right">
+                      <button
+                        type="button"
+                        className="mr-2 rounded-full bg-black p-2 text-white"
+                        onClick={() => openEditDialog(item)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
                       <button
                         type="button"
                         className="rounded-full bg-red-500 p-2 text-white"
@@ -583,7 +833,215 @@ export default function Products() {
             </TableBody>
           </Table>
         </div>
+
+        <div className="flex flex-col gap-3 border-t border-border/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <p className="text-sm text-muted-foreground">
+            Showing {firstVisibleProduct}-{lastVisibleProduct} of{" "}
+            {filteredProducts.length} products
+          </p>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9 rounded-xl"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+
+            {paginationPages.map((page) => (
+              <Button
+                key={page}
+                type="button"
+                variant={currentPage === page ? "default" : "outline"}
+                className="h-9 min-w-9 rounded-xl px-3"
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </Button>
+            ))}
+
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9 rounded-xl"
+              onClick={() =>
+                setCurrentPage((page) => Math.min(totalPages, page + 1))
+              }
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       </div>
+
+      <Dialog
+        open={!!editItem}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditItem(null);
+            setEditForm(INITIAL_FORM);
+          }
+        }}
+      >
+        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select
+                  key={`edit-category-${editFormResetKey}`}
+                  value={editForm.category}
+                  onValueChange={(value) =>
+                    setEditForm({ ...editForm, category: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat._id} value={cat._id}>
+                        {cat.name || cat.category_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Price</Label>
+                <Input
+                  placeholder="Amount"
+                  type="number"
+                  value={editForm.price}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, price: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Brand</Label>
+                <MultiSelect
+                  key={`edit-brand-${editFormResetKey}`}
+                  options={brands.map((brand) => ({
+                    ...brand,
+                    name: brand.name || brand.brand_name,
+                  }))}
+                  value={editForm.brandIds}
+                  onChange={(value) =>
+                    setEditForm({
+                      ...editForm,
+                      brandIds: value,
+                      modelIds: editForm.modelIds.filter((modelId) => {
+                        const model = models.find(
+                          (item) => String(item._id) === String(modelId),
+                        );
+                        return model
+                          ? value.includes(getModelBrandId(model))
+                          : true;
+                      }),
+                    })
+                  }
+                  placeholder="Select Brand(s)"
+                  valueKey="_id"
+                  labelKey="name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Model</Label>
+                <MultiSelect
+                  key={`edit-model-${editFormResetKey}`}
+                  options={getModelOptions(editForm.brandIds)}
+                  value={editForm.modelIds}
+                  onChange={(value) =>
+                    setEditForm({ ...editForm, modelIds: value })
+                  }
+                  placeholder="Select Model(s)"
+                  valueKey="_id"
+                  labelKey="name"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <RichTextEditor
+                key={`edit-description-${editFormResetKey}`}
+                value={editForm.description}
+                onChange={(value) =>
+                  setEditForm({ ...editForm, description: value })
+                }
+              />
+            </div>
+
+            <div className="space-y-3">
+              <Label>Reference Images</Label>
+              <div className="flex flex-wrap items-center gap-3">
+                {editForm.referenceImages.map((image, index) => (
+                  <div
+                    key={`${image}-${index}`}
+                    className="relative h-20 w-20 overflow-hidden rounded-xl border bg-muted shadow-sm"
+                  >
+                    <Image
+                      src={image}
+                      alt={`Reference ${index + 1}`}
+                      fill
+                      sizes="80px"
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeReferenceImage(image, setEditForm)}
+                      className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+
+                <label className="flex h-24 min-w-[150px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-background/70 px-4 text-sm text-muted-foreground transition-colors hover:bg-muted/50">
+                  <Upload className="h-4 w-4" />
+                  <span className="text-center font-medium">
+                    {isUploadingEditImages ? "Uploading..." : "Upload Images"}
+                  </span>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    disabled={isUploadingEditImages}
+                    onChange={(e) =>
+                      handleReferenceImageUpload(
+                        e.target.files,
+                        e.target,
+                        setEditForm,
+                        setIsUploadingEditImages,
+                      )
+                    }
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditItem(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdate}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={!!deleteItem}

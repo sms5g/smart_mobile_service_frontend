@@ -52,7 +52,7 @@ const navItems = [
   },
   { title: "Users", href: "/users", icon: Users },
   { title: "Feedback", href: "/feedback", icon: LogOut },
-  { title: "Contact Us", href: "/contactus", icon: LogOut },
+  // { title: "Contact Us", href: "/contactus", icon: LogOut },
 ];
 
 export default function AppSidebar() {

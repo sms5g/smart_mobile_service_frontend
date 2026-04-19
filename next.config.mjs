@@ -10,6 +10,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "api-smart-mobile-service.onrender.com",
       },
+      {
+        protocol: "https",
+        hostname: "pub-07d8598045444efc9676b80f08ab88fe.r2.dev",
+      },
     ],
   },
 };

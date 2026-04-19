@@ -4,18 +4,20 @@ import axios from "axios";
 // const BASE_URL =
 //   "https://api-smart-mobile-service.onrender.com";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://smartmobileservicebackend-production.up.railway.app/api";
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://smartmobileservicebackend-production.up.railway.app/api";
+
+  
 export const fetcher = async (
   endpoint,
   method = "GET",
   data,
-  customHeaders = {}
+  customHeaders = {},
 ) => {
   try {
     const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("token")
-        : null;
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
     const isFormData =
       typeof FormData !== "undefined" && data instanceof FormData;
@@ -38,8 +40,6 @@ export const fetcher = async (
       window.location.href = "/login";
     }
 
-    throw new Error(
-      error.response?.data?.message || error.message
-    );
+    throw new Error(error.response?.data?.message || error.message);
   }
 };

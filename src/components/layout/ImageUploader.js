@@ -71,18 +71,7 @@ export default function ImageUploader({ value, onChange, label = "Image" }) {
           />
         )}
 
-        {/* Camera Button */}
-        <button
-          type="button"
-          disabled={isUploading}
-          onClick={() => cameraRef.current.click()}
-          className="h-9 flex items-center gap-2 px-4 py-1 rounded-md border border-dashed border-input hover:bg-muted/50 transition-colors"
-        >
-          <Camera className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
-            {isUploading ? "Uploading..." : "Camera"}
-          </span>
-        </button>
+      
 
         {/* Upload Button */}
         <button

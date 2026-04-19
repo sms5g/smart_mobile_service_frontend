@@ -196,8 +196,7 @@ export default function Models() {
           />
 
           <Button type="submit" className="mt-4">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Model
+            Submit
           </Button>
         </div>
       </form>
@@ -238,16 +237,16 @@ export default function Models() {
                   <td className="p-2 font-semibold text-center ">
                     {item.name || item.model_name}
                   </td>
-                    <td className="p-2 text-center ">
-                      {item.image || item.model_image ? (
-                        <Image
-                          src={item.image || item.model_image}
-                          alt={item.name || item.model_name}
-                          width={40}
-                          height={40}
-                          className="h-10 w-10 rounded object-cover"
-                        />
-                      ) : (
+                  <td className="p-2 text-center ">
+                    {item.image || item.model_image ? (
+                      <Image
+                        src={item.image || item.model_image}
+                        alt={item.name || item.model_name}
+                        width={40}
+                        height={40}
+                        className="h-10 w-10 rounded object-cover"
+                      />
+                    ) : (
                       "—"
                     )}
                   </td>
@@ -258,7 +257,9 @@ export default function Models() {
                         onClick={() =>
                           setEditItem({
                             ...item,
-                            ...splitModelName(item.name || item.model_name || ""),
+                            ...splitModelName(
+                              item.name || item.model_name || "",
+                            ),
                           })
                         }
                         type="button"
