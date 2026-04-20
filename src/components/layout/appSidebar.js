@@ -61,6 +61,7 @@ export default function AppSidebar() {
   const [openItems, setOpenItems] = useState([]);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { logout } = useUser();
+  const showLabels = !isCollapsed || isMobileOpen;
 
   const toggleItem = (title) => {
     setOpenItems((prev) =>
@@ -125,7 +126,7 @@ export default function AppSidebar() {
         <div className="flex flex-col h-full justify-between">
           {/* Header */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-[#374151]">
-            {!isCollapsed && (
+            {showLabels && (
               <span className="text-xl font-bold">Admin Panel</span>
             )}
 
@@ -166,7 +167,7 @@ export default function AppSidebar() {
                   {item.children ? (
                     <Collapsible
                       open={
-                        !isCollapsed &&
+                        showLabels &&
                         (openItems.includes(item.title) ||
                           isChildActive(item.children))
                       }
@@ -179,11 +180,11 @@ export default function AppSidebar() {
                             isChildActive(item.children)
                               ? "bg-[#2563EB] text-white"
                               : "hover:bg-[#1F2937]",
-                            isCollapsed && "justify-center",
+                            isCollapsed && "lg:justify-center",
                           )}
                         >
                           <item.icon className="h-5 w-5" />
-                          {!isCollapsed && (
+                          {showLabels && (
                             <>
                               <span className="flex-1 text-left">
                                 {item.title}
@@ -229,11 +230,11 @@ export default function AppSidebar() {
                         isActive(item.href)
                           ? "bg-[#2563EB] text-white"
                           : "hover:bg-[#1F2937]",
-                        isCollapsed && "justify-center",
+                        isCollapsed && "lg:justify-center",
                       )}
                     >
                       <item.icon className="h-5 w-5" />
-                      {!isCollapsed && <span>{item.title}</span>}
+                      {showLabels && <span>{item.title}</span>}
                     </Link>
                   )}
                 </li>
@@ -243,7 +244,7 @@ export default function AppSidebar() {
 
           {/* Footer */}
           <div className="flex justify-between items-center border-t border-[#374151] p-4">
-            {!isCollapsed && (
+            {showLabels && (
               <div>
                 <p className="text-sm font-medium truncate">
                   Smart Mobile Service

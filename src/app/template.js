@@ -23,7 +23,7 @@ export default function Template({ children }) {
     if (isAuthenticated && isLoginPage) {
       router.replace("/");
     }
-  }, [isAuthenticated, loading, pathname, router]);
+  }, [isAuthenticated, isLoginPage, loading, pathname, router]);
 
   if (loading) return <FullScreenLoader />;
 
