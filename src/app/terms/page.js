@@ -62,7 +62,7 @@ export default function TermsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-card border rounded-2xl p-6 shadow-sm">
+      <div className="bg-card border rounded-2xl p-4 sm:p-6 shadow-sm">
         <h2 className="text-lg font-semibold mb-4">Terms Page Content</h2>
 
         <form onSubmit={handleSave} className="space-y-4">
@@ -86,11 +86,11 @@ export default function TermsPage() {
             />
           </div>
 
-          <div className="flex gap-2">
-            <Button type="submit" disabled={saving || loading}>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button type="submit" disabled={saving || loading} className="w-full sm:w-auto">
               {saving ? "Saving..." : "Save Terms"}
             </Button>
-            <Button type="button" variant="outline" onClick={loadTerms} disabled={loading}>
+            <Button type="button" variant="outline" onClick={loadTerms} disabled={loading} className="w-full sm:w-auto">
               Refresh
             </Button>
           </div>

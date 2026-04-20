@@ -50,6 +50,8 @@ export default function Products() {
   const [products, setProducts] = useState([]);
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
+  const [modelOptions, setModelOptions] = useState([]);
+  const [editModelOptions, setEditModelOptions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [brandSearch, setBrandSearch] = useState("");
@@ -62,6 +64,8 @@ export default function Products() {
   const [deleteItem, setDeleteItem] = useState(null);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [isUploadingEditImages, setIsUploadingEditImages] = useState(false);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [isLoadingEditModels, setIsLoadingEditModels] = useState(false);
   const [formResetKey, setFormResetKey] = useState(0);
   const [editFormResetKey, setEditFormResetKey] = useState(0);
 
@@ -92,6 +96,131 @@ export default function Products() {
     const res = await fetcher("/products");
     setProducts(res.data || res || []);
   };
+
+  const normalizeModelOptions = useCallback((items = []) => {
+    const uniqueModels = new Map();
+
+    items.forEach((model) => {
+      const id = String(model?._id || model?.id || "");
+      if (!id) return;
+
+      uniqueModels.set(id, {
+        ...model,
+        _id: id,
+        name: model.name || model.model_name || "",
+        disabled: Boolean(model.isChecked),
+      });
+    });
+
+    return Array.from(uniqueModels.values());
+  }, []);
+
+  const fetchModelOptions = useCallback(
+    async (categoryId, brandIds = []) => {
+      if (!categoryId || !brandIds.length) return [];
+
+      const responses = await Promise.all(
+        brandIds.map((brandId) =>
+          fetcher(
+            `/products/getModelOptions?category=${encodeURIComponent(
+              categoryId,
+            )}&brand=${encodeURIComponent(brandId)}`,
+          ),
+        ),
+      );
+
+      return normalizeModelOptions(
+        responses.flatMap((response) => response?.data || response || []),
+      );
+    },
+    [normalizeModelOptions],
+  );
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    const loadModels = async () => {
+      if (!form.category || !form.brandIds.length) {
+        setModelOptions([]);
+        setIsLoadingModels(false);
+        return;
+      }
+
+      try {
+        setIsLoadingModels(true);
+        const options = await fetchModelOptions(form.category, form.brandIds);
+
+        if (isCurrent) {
+          setModelOptions(options);
+          setForm((prev) => ({
+            ...prev,
+            modelIds: prev.modelIds.filter((modelId) =>
+              options.some(
+                (option) =>
+                  String(option._id) === String(modelId) && !option.disabled,
+              ),
+            ),
+          }));
+        }
+      } catch (error) {
+        if (isCurrent) {
+          setModelOptions([]);
+          toast.error(error.message || "Failed to fetch model options");
+        }
+      } finally {
+        if (isCurrent) setIsLoadingModels(false);
+      }
+    };
+
+    loadModels();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [fetchModelOptions, form.brandIds, form.category]);
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    const loadModels = async () => {
+      if (!editItem || !editForm.category || !editForm.brandIds.length) {
+        setEditModelOptions([]);
+        setIsLoadingEditModels(false);
+        return;
+      }
+
+      try {
+        setIsLoadingEditModels(true);
+        const options = await fetchModelOptions(
+          editForm.category,
+          editForm.brandIds,
+        );
+
+        if (isCurrent) {
+          setEditModelOptions(options);
+          setEditForm((prev) => ({
+            ...prev,
+            modelIds: prev.modelIds.filter((modelId) =>
+              options.some((option) => String(option._id) === String(modelId)),
+            ),
+          }));
+        }
+      } catch (error) {
+        if (isCurrent) {
+          setEditModelOptions([]);
+          toast.error(error.message || "Failed to fetch model options");
+        }
+      } finally {
+        if (isCurrent) setIsLoadingEditModels(false);
+      }
+    };
+
+    loadModels();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [editForm.brandIds, editForm.category, editItem, fetchModelOptions]);
 
   const handleReferenceImageUpload = async (
     files,
@@ -161,6 +290,17 @@ export default function Products() {
       isRichTextEmpty(form.description)
     ) {
       toast.error("All required fields must be filled");
+      return;
+    }
+
+    const hasUnavailableModel = form.modelIds.some((modelId) =>
+      modelOptions.some(
+        (model) => String(model._id) === String(modelId) && model.disabled,
+      ),
+    );
+
+    if (hasUnavailableModel) {
+      toast.error("Selected model is already added");
       return;
     }
 
@@ -263,12 +403,12 @@ export default function Products() {
   const modelMap = useMemo(
     () =>
       new Map(
-        models.map((model) => [
+        [...models, ...modelOptions, ...editModelOptions].map((model) => [
           String(model._id),
           model.name || model.model_name || "",
         ]),
       ),
-    [models],
+    [editModelOptions, modelOptions, models],
   );
 
   const categoryMap = useMemo(
@@ -311,25 +451,6 @@ export default function Products() {
   const getSelectedIds = useCallback(
     (value) => normalizeValues(value).map(getOptionId).filter(Boolean),
     [getOptionId, normalizeValues],
-  );
-
-  const getModelBrandId = useCallback(
-    (model) => getOptionId(model.brand || model.brand_id),
-    [getOptionId],
-  );
-
-  const getModelOptions = useCallback(
-    (selectedBrandIds) =>
-      models
-        .filter((model) => {
-          if (!selectedBrandIds.length) return true;
-          return selectedBrandIds.includes(getModelBrandId(model));
-        })
-        .map((model) => ({
-          ...model,
-          name: model.name || model.model_name,
-        })),
-    [getModelBrandId, models],
   );
 
   const getBrandLabel = useCallback(
@@ -459,7 +580,7 @@ export default function Products() {
     <div className="space-y-6">
       <form
         onSubmit={handleAdd}
-        className="overflow-hidden rounded-[28px] border border-border/60 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,247,255,0.95))] shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
+        className="overflow-hidden rounded-2xl border border-border/60 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,247,255,0.95))] shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:rounded-[28px]"
       >
         <div className="border-b border-border/50 px-5 py-4 sm:px-6">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">
@@ -481,7 +602,9 @@ export default function Products() {
               <Select
                 key={`category-${formResetKey}`}
                 value={form.category}
-                onValueChange={(value) => setForm({ ...form, category: value })}
+                onValueChange={(value) =>
+                  setForm({ ...form, category: value, modelIds: [] })
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Category" />
@@ -517,12 +640,16 @@ export default function Products() {
               <Label>Model</Label>
               <MultiSelect
                 key={`model-${formResetKey}`}
-                options={getModelOptions(form.brandIds)}
+                options={modelOptions}
                 value={form.modelIds}
                 onChange={(value) => setForm({ ...form, modelIds: value })}
-                placeholder="Select Model(s)"
+                placeholder={
+                  isLoadingModels ? "Loading models..." : "Select Model(s)"
+                }
                 valueKey="_id"
                 labelKey="name"
+                disabledKey="disabled"
+                disabledLabel="Already added"
               />
             </div>
 
@@ -611,7 +738,7 @@ export default function Products() {
         </div>
       </form>
 
-      <div className="overflow-hidden rounded-[28px] border border-border/60 bg-card shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+      <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:rounded-[28px]">
         <div className="flex flex-col gap-4 border-b border-border/50 px-5 py-5 sm:px-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">
@@ -638,7 +765,7 @@ export default function Products() {
             />
           </div>
         </div>
-        <div className="p-5 grid grid-cols-4 gap-2 items-center lg:min-w-[900px]">
+        <div className="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
           <div className="space-y-2">
             <Input
               placeholder="Search product..."
@@ -900,7 +1027,7 @@ export default function Products() {
                   key={`edit-category-${editFormResetKey}`}
                   value={editForm.category}
                   onValueChange={(value) =>
-                    setEditForm({ ...editForm, category: value })
+                    setEditForm({ ...editForm, category: value, modelIds: [] })
                   }
                 >
                   <SelectTrigger>
@@ -941,14 +1068,7 @@ export default function Products() {
                     setEditForm({
                       ...editForm,
                       brandIds: value,
-                      modelIds: editForm.modelIds.filter((modelId) => {
-                        const model = models.find(
-                          (item) => String(item._id) === String(modelId),
-                        );
-                        return model
-                          ? value.includes(getModelBrandId(model))
-                          : true;
-                      }),
+                      modelIds: [],
                     })
                   }
                   placeholder="Select Brand(s)"
@@ -961,14 +1081,20 @@ export default function Products() {
                 <Label>Model</Label>
                 <MultiSelect
                   key={`edit-model-${editFormResetKey}`}
-                  options={getModelOptions(editForm.brandIds)}
+                  options={editModelOptions}
                   value={editForm.modelIds}
                   onChange={(value) =>
                     setEditForm({ ...editForm, modelIds: value })
                   }
-                  placeholder="Select Model(s)"
+                  placeholder={
+                    isLoadingEditModels
+                      ? "Loading models..."
+                      : "Select Model(s)"
+                  }
                   valueKey="_id"
                   labelKey="name"
+                  disabledKey="disabled"
+                  disabledLabel="Already added"
                 />
               </div>
             </div>

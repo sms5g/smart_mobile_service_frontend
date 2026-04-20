@@ -150,10 +150,10 @@ export default function NewsPage() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleAdd} className="bg-card border rounded-2xl p-6 shadow-sm">
+      <form onSubmit={handleAdd} className="bg-card border rounded-2xl p-4 sm:p-6 shadow-sm">
         <h3 className="font-semibold mb-4">Add News</h3>
 
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2 md:col-span-2">
             <Label>Title</Label>
             <Input
@@ -187,16 +187,16 @@ export default function NewsPage() {
           />
         </div>
 
-        <Button type="submit" className="mt-4">
+        <Button type="submit" className="mt-4 w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Add News
         </Button>
       </form>
 
-      <div className="bg-card border rounded-2xl p-6 shadow-sm">
+      <div className="bg-card border rounded-2xl p-4 sm:p-6 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
           <h3 className="font-semibold">News List</h3>
-          <Button variant="outline" onClick={loadNews} disabled={loading}>
+          <Button variant="outline" onClick={loadNews} disabled={loading} className="w-full sm:w-auto">
             Refresh
           </Button>
         </div>
@@ -210,7 +210,8 @@ export default function NewsPage() {
           />
         </div>
 
-        <table className="w-full border text-sm">
+        <div className="overflow-x-auto">
+        <table className="min-w-[760px] w-full border text-sm">
           <thead>
             <tr className="bg-muted">
               <th className="border p-2 text-left">SL</th>
@@ -265,6 +266,7 @@ export default function NewsPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       <Dialog open={!!editItem} onOpenChange={() => setEditItem(null)}>

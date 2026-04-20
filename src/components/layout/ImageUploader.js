@@ -60,7 +60,7 @@ export default function ImageUploader({ value, onChange, label = "Image" }) {
     <div className="space-y-2">
       {/* <Label>{label}</Label> */}
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4">
         {preview && (
           <Image
             src={preview}
@@ -78,7 +78,7 @@ export default function ImageUploader({ value, onChange, label = "Image" }) {
           type="button"
           disabled={isUploading}
           onClick={() => fileRef.current.click()}
-          className="h-9 flex items-center gap-2 px-4 py-1 rounded-md border border-dashed border-input hover:bg-muted/50 transition-colors"
+          className="flex h-9 items-center gap-2 rounded-md border border-dashed border-input px-4 py-1 transition-colors hover:bg-muted/50"
         >
           <Upload className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm text-muted-foreground">

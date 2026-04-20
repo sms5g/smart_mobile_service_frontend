@@ -106,10 +106,10 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-card border rounded-2xl p-6 shadow-sm">
+      <div className="bg-card border rounded-2xl p-4 sm:p-6 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
           <h2 className="text-lg font-semibold">Application Users</h2>
-          <Button variant="outline" onClick={loadUsers} disabled={loading}>
+          <Button variant="outline" onClick={loadUsers} disabled={loading} className="w-full sm:w-auto">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -124,7 +124,8 @@ export default function UsersPage() {
           />
         </div>
 
-        <table className="w-full border text-sm">
+        <div className="overflow-x-auto">
+        <table className="min-w-[860px] w-full border text-sm">
           <thead>
             <tr className="bg-muted">
               <th className="border p-2 text-left">SL</th>
@@ -191,6 +192,7 @@ export default function UsersPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       <ConfirmDialog

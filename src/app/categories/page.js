@@ -102,7 +102,7 @@ export default function Categories() {
       {/* Add Category Form */}
       <form
         onSubmit={handleAdd}
-        className="bg-card border rounded-2xl p-6 mb-6 shadow-sm"
+        className="bg-card border rounded-2xl p-4 sm:p-6 mb-6 shadow-sm"
       >
         <h3 className="font-semibold mb-4 text-foreground">Add Category</h3>
 
@@ -124,8 +124,8 @@ export default function Categories() {
         </Button>
       </form>
 
-      <div className="border rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="border rounded-xl overflow-x-auto">
+        <table className="min-w-[560px] w-full text-sm">
           <thead className="bg-muted">
             <tr className="text-left">
               <th className="px-4 py-3 w-40">SL No.</th>

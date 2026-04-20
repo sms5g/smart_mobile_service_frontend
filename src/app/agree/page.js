@@ -161,7 +161,7 @@ export default function AgreePage() {
     <div className="space-y-6">
       <form
         onSubmit={handleAdd}
-        className="bg-card border rounded-2xl p-6 shadow-sm"
+        className="bg-card border rounded-2xl p-4 sm:p-6 shadow-sm"
       >
         <h2 className="text-lg font-semibold mb-4">Add Agree Section</h2>
 
@@ -189,21 +189,22 @@ export default function AgreePage() {
           </div>
         </div>
 
-        <Button type="submit" className="mt-4" disabled={creating}>
+        <Button type="submit" className="mt-4 w-full sm:w-auto" disabled={creating}>
           <Plus className="h-4 w-4 mr-2" />
           {creating ? "Adding..." : "Add Agree Section"}
         </Button>
       </form>
 
-      <div className="bg-card border rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-card border rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
           <h2 className="text-lg font-semibold">Agree Sections</h2>
-          <Button variant="outline" onClick={loadAgree} disabled={loading}>
+          <Button variant="outline" onClick={loadAgree} disabled={loading} className="w-full sm:w-auto">
             Refresh
           </Button>
         </div>
 
-        <table className="w-full border text-sm">
+        <div className="overflow-x-auto">
+        <table className="min-w-[760px] w-full border text-sm">
           <thead>
             <tr className="bg-muted">
               <th className="border p-2 text-left">SL</th>
@@ -243,6 +244,7 @@ export default function AgreePage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       <Dialog open={!!editItem} onOpenChange={() => setEditItem(null)}>

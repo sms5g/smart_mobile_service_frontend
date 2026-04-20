@@ -24,11 +24,14 @@ export function MultiSelect({
   placeholder = "Select options",
   valueKey = "_id",
   labelKey = "brand_name",
+  disabledKey = "disabled",
+  disabledLabel = "Unavailable",
 }) {
   const [open, setOpen] = useState(false)
 
-  const toggleOption = (selectedValue) => {
+  const toggleOption = (selectedValue, isDisabled = false) => {
     if (!onChange) return
+    if (isDisabled && !value.includes(selectedValue)) return
 
     if (value.includes(selectedValue)) {
       onChange(value.filter((v) => v !== selectedValue))
@@ -74,14 +77,26 @@ export function MultiSelect({
               const itemLabel =
                 item[labelKey] || item.name || item.brand_name || item.model_name || "Unknown"
               const isSelected = value.includes(itemValue)
+              const isDisabled = Boolean(item[disabledKey])
+              const commandDisabled = isDisabled && !isSelected
 
               return (
                 <CommandItem
                   key={itemValue}
-                  onSelect={() => toggleOption(itemValue)}
-                  className="flex justify-between"
+                  disabled={commandDisabled}
+                  onSelect={() => toggleOption(itemValue, isDisabled)}
+                  className={cn(
+                    "flex justify-between",
+                    isDisabled ? "opacity-50" : ""
+                  )}
                 >
                   <span className="text-xs font-semibold">{itemLabel}</span>
+
+                  {isDisabled ? (
+                    <span className="ml-auto mr-2 text-[10px] font-medium text-muted-foreground">
+                      {disabledLabel}
+                    </span>
+                  ) : null}
 
                   <Check
                     className={cn(

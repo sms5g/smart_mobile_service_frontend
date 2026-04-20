@@ -104,11 +104,11 @@ export default function Brands() {
     <div className="space-y-6">
       <form
         onSubmit={handleAdd}
-        className="bg-card border rounded-2xl p-2 md:p-6 shadow-sm"
+        className="bg-card border rounded-2xl p-4 sm:p-6 shadow-sm"
       >
         <h3 className="font-semibold mb-4">Add Brand</h3>
-        <div className="flex flex-col md:flex-row items-center gap-4">
-          <div className="space-y-2 md:w-80 w-60">
+        <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:items-center">
+          <div className="w-full space-y-2 lg:w-80">
             <Input
               value={brandName}
               onChange={(e) => setBrandName(e.target.value)}
@@ -117,11 +117,12 @@ export default function Brands() {
           </div>
 
           <ImageUploader value={image} onChange={setImage} />
-          <div className="flex gap-3 items-center justify-end">
-            <Button type="submit">Submit</Button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+            <Button type="submit" className="w-full sm:w-auto">Submit</Button>
             <Button
               variant="destructive"
               type="button"
+              className="w-full sm:w-auto"
               onClick={() => {
                 setBrandName("");
                 setImage("");
@@ -133,7 +134,7 @@ export default function Brands() {
         </div>
       </form>
 
-      <div className="bg-card border rounded-2xl p-2 shadow-sm">
+      <div className="bg-card border rounded-2xl p-4 sm:p-6 shadow-sm">
         <h3 className="font-semibold mb-4 px-2">Brand List</h3>
 
         {/* Search */}
@@ -146,66 +147,68 @@ export default function Brands() {
           />
         </div>
 
-        <table className="w-full border text-sm">
-          <thead>
-            <tr className="bg-muted">
-              <th className="border p-2 text-left">SL</th>
-              <th className="border p-2 text-left">Brand Name</th>
-              <th className="border p-2 text-left">Image</th>
-              <th className="border p-2 text-right">Actions</th>
-            </tr>
-          </thead>
+        <div className="overflow-x-auto">
+          <table className="min-w-[640px] w-full border text-sm">
+            <thead>
+              <tr className="bg-muted">
+                <th className="border p-2 text-left">SL</th>
+                <th className="border p-2 text-left">Brand Name</th>
+                <th className="border p-2 text-left">Image</th>
+                <th className="border p-2 text-right">Actions</th>
+              </tr>
+            </thead>
 
-          <tbody>
-            {filteredItems.length > 0 ? (
-              filteredItems.map((item, index) => (
-                <tr key={item._id} className="border-b">
-                  <td className=" p-2">{index + 1}</td>
+            <tbody>
+              {filteredItems.length > 0 ? (
+                filteredItems.map((item, index) => (
+                  <tr key={item._id} className="border-b">
+                    <td className=" p-2">{index + 1}</td>
 
-                  <td className=" p-2 font-semibold">
-                    {item.name || item.brand_name}
-                  </td>
+                    <td className=" p-2 font-semibold">
+                      {item.name || item.brand_name}
+                    </td>
 
-                  <td className=" p-2">
-                    {item?.image ? (
-                      <Image
-                        src={item.image}
-                        alt={item.name || item.brand_name}
-                        width={40}
-                        height={40}
-                        className="h-10 w-10 object-contain"
-                      />
-                    ) : (
-                      "-"
-                    )}
-                  </td>
+                    <td className=" p-2">
+                      {item?.image ? (
+                        <Image
+                          src={item.image}
+                          alt={item.name || item.brand_name}
+                          width={40}
+                          height={40}
+                          className="h-10 w-10 object-contain"
+                        />
+                      ) : (
+                        "-"
+                      )}
+                    </td>
 
-                  <td className="flex justify-end items-center p-2 text-end space-x-2">
-                    <button
-                      className="p-2 text-sm border flex gap-2 items-center justify-end rounded-full bg-black text-white"
-                      onClick={() => setEditItem(item)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
+                    <td className="flex justify-end items-center p-2 text-end space-x-2">
+                      <button
+                        className="p-2 text-sm border flex gap-2 items-center justify-end rounded-full bg-black text-white"
+                        onClick={() => setEditItem(item)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
 
-                    <button
-                      className="p-2 text-sm border flex gap-2 items-center justify-end rounded-full bg-red-500 text-white"
-                      onClick={() => setDeleteItem(item)}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </button>
+                      <button
+                        className="p-2 text-sm border flex gap-2 items-center justify-end rounded-full bg-red-500 text-white"
+                        onClick={() => setDeleteItem(item)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="border p-4 text-center">
+                    No matching brands found
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="4" className="border p-4 text-center">
-                  No matching brands found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <Dialog open={!!editItem} onOpenChange={() => setEditItem(null)}>

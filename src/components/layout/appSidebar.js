@@ -81,7 +81,7 @@ export default function AppSidebar() {
   return (
     <>
       {/* Mobile Top Bar */}
-      <div className="md:hidden flex items-center justify-between px-2 py-1 bg-[#111827] text-white">
+      <div className="sticky top-0 z-30 flex items-center justify-between bg-[#111827] px-2 py-1 text-white lg:hidden">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -106,7 +106,7 @@ export default function AppSidebar() {
       {/* Overlay */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={closeMobileSidebar}
         />
       )}
@@ -114,11 +114,11 @@ export default function AppSidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed md:static top-0 left-0 z-50 h-screen bg-[#111827] text-[#F9FAFB] transition-all duration-300 border-r border-[#374151]",
+          "fixed left-0 top-0 z-50 h-screen bg-[#111827] text-[#F9FAFB] transition-all duration-300 border-r border-[#374151] lg:static",
           "transform",
           isMobileOpen ? "translate-x-0" : "-translate-x-full",
-          "md:translate-x-0",
-          isCollapsed ? "md:w-16" : "md:w-64",
+          "lg:translate-x-0",
+          isCollapsed ? "lg:w-16" : "lg:w-64",
           "w-64",
         )}
       > 
@@ -131,7 +131,7 @@ export default function AppSidebar() {
 
             <div className="flex items-center gap-2">
               {/* Desktop Collapse Button */}
-              <div className="hidden md:block">
+              <div className="hidden lg:block">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -146,7 +146,7 @@ export default function AppSidebar() {
               </div>
 
               {/* Mobile Close Button */}
-              <div className="md:hidden">
+              <div className="lg:hidden">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -248,9 +248,7 @@ export default function AppSidebar() {
                 <p className="text-sm font-medium truncate">
                   Smart Mobile Service
                 </p>
-                <p className="text-xs text-[#9CA3AF] truncate">
-                  admin@example.com
-                </p>
+                
               </div>
             )}
             <Button

@@ -149,11 +149,11 @@ export default function Models() {
     <div className="space-y-6">
       <form
         onSubmit={handleAdd}
-        className="bg-card border rounded-2xl p-6 shadow-sm"
+        className="bg-card border rounded-2xl p-4 sm:p-6 shadow-sm"
       >
         <h3 className="font-semibold mb-4">Add Model</h3>
 
-        <div className="grid md:grid-cols-4 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="space-y-2">
             <Select
               value={form.brand}
@@ -195,13 +195,13 @@ export default function Models() {
             onChange={(img) => setForm({ ...form, image: img })}
           />
 
-          <Button type="submit" className="mt-4">
+          <Button type="submit" className="sm:col-span-2 xl:col-span-1 xl:mt-4">
             Submit
           </Button>
         </div>
       </form>
 
-      <div className="bg-card border rounded-2xl p-6 shadow-sm">
+      <div className="bg-card border rounded-2xl p-4 sm:p-6 shadow-sm">
         <h3 className="font-semibold mb-4">Model List</h3>
 
         <div className="mb-4 flex justify-end">
@@ -213,7 +213,8 @@ export default function Models() {
           />
         </div>
 
-        <table className="w-full border text-sm">
+        <div className="overflow-x-auto">
+        <table className="min-w-[720px] w-full border text-sm">
           <thead>
             <tr className="bg-muted">
               <th className="border p-2">SL</th>
@@ -286,6 +287,7 @@ export default function Models() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       <Dialog open={!!editItem} onOpenChange={() => setEditItem(null)}>

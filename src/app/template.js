@@ -34,10 +34,10 @@ export default function Template({ children }) {
   // 🔐 If authenticated → show dashboard layout
   if (isAuthenticated) {
     return (
-      <div className="flex flex-col md:flex-row h-screen bg-background">
+      <div className="flex min-h-screen flex-col bg-background lg:h-screen lg:flex-row">
         <AppSidebar />
-        <main className="flex-1 overflow-y-scroll">
-          <div className="container py-6 px-4 md:px-6 lg:px-8 max-w-7xl">
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
+          <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-4 sm:py-6 lg:px-8">
             {children}
           </div>
         </main>

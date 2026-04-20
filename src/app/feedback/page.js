@@ -267,7 +267,7 @@ export default function FeedbackPage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <div className="bg-card border rounded-xl p-4">
           <p className="text-xs text-muted-foreground">Total</p>
           <p className="text-xl font-semibold">{statusCounts.total}</p>
@@ -331,8 +331,8 @@ export default function FeedbackPage() {
           </div>
         </div>
 
-        <div className="border rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="border rounded-xl overflow-x-auto">
+          <table className="min-w-[960px] w-full text-sm">
             <thead className="bg-muted">
               <tr>
                 <th className="px-3 py-3 text-left">SL</th>

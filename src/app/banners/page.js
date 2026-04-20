@@ -162,7 +162,7 @@ export default function BannersPage() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleAdd} className="bg-card border rounded-2xl p-6 shadow-sm">
+      <form onSubmit={handleAdd} className="bg-card border rounded-2xl p-4 sm:p-6 shadow-sm">
         <h3 className="font-semibold mb-4">Add Banner</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -180,16 +180,16 @@ export default function BannersPage() {
           />
         </div>
 
-        <Button type="submit" className="mt-4" disabled={actionLoading === "create"}>
+        <Button type="submit" className="mt-4 w-full sm:w-auto" disabled={actionLoading === "create"}>
           <Plus className="h-4 w-4 mr-2" />
           Add Banner
         </Button>
       </form>
 
-      <div className="bg-card border rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-card border rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
           <h3 className="font-semibold">Banner List</h3>
-          <Button variant="outline" onClick={fetchBanners} disabled={loading}>
+          <Button variant="outline" onClick={fetchBanners} disabled={loading} className="w-full sm:w-auto">
             Refresh
           </Button>
         </div>
@@ -203,7 +203,8 @@ export default function BannersPage() {
           />
         </div>
 
-        <table className="w-full border text-sm">
+        <div className="overflow-x-auto">
+        <table className="min-w-[760px] w-full border text-sm">
           <thead>
             <tr className="bg-muted">
               <th className="border p-2 text-left">SL</th>
@@ -280,6 +281,7 @@ export default function BannersPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       <Dialog open={!!editItem} onOpenChange={() => setEditItem(null)}>
